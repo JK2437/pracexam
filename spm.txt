@@ -1,0 +1,63 @@
+#define BLYNK_PRINT Serial
+#include <ESP8266WiFi.h> // Board -> Esp8266 by Esp8266 community
+#include <BlynkSimpleEsp8266.h> //Library manager -> Blynk by Volodymyr Shymanskyy
+
+
+char auth[] = "0s1lIh3sLE8yN4juCQ2RcjoTCxzaePIv";
+char ssid[] = "Realme 7 Pro";
+char pass[] = "Sushila123456";
+
+BlynkTimer timer;
+bool Relay = 0;
+
+#define sensor A0
+#define waterPump D3
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(waterPump, OUTPUT);
+  digitalWrite(waterPump, HIGH);
+
+
+  Blynk.begin(auth, ssid, pass, "blynk.cloud", 80);
+
+
+
+  //Call the function
+  timer.setInterval(100L, soilMoistureSensor);
+}
+
+//Get the button value
+BLYNK_WRITE(V1) {
+  Relay = param.asInt();
+
+  if (Relay == 1) {
+    digitalWrite(waterPump, LOW);
+  } else {
+    digitalWrite(waterPump, HIGH);
+
+  }
+}
+
+//Get the soil moisture values
+void soilMoistureSensor() {
+  int value = analogRead(sensor);
+  value = map(value, 0, 1024, 0, 100);
+  value = (value - 100) * -1;
+
+  Blynk.virtualWrite(V0, value);
+
+
+  if(value < 35){
+    Blynk.email("deshmukhswapnil500@gmail.com", "Alert", "Low Moisture Detected!");
+    Blynk.logEvent("moisture_alert","Low Moisture Detected");
+    digitalWrite(D3, LOW);
+  }
+
+
+}
+
+void loop() {
+  Blynk.run();//Run the Blynk library
+  timer.run();//Run the Blynk timer
+}
